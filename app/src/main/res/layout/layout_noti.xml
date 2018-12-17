@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="100dp"
+        android:orientation="horizontal">
+
+        <ImageView
+            android:id="@+id/ib_noti_thumbnail"
+            android:layout_width="100dp"
+            android:layout_height="100dp"
+            android:src="@drawable/noun_play_343514"
+            />
+
+        <TextView
+            android:id="@+id/tv_noti_music_name"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:text="example.mp3"
+            android:gravity="center"
+            android:textSize="40dp"
+            android:textStyle="bold"
+            />
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="100dp"
+        android:orientation="horizontal"
+        android:gravity="center">
+
+        <ImageButton
+            android:id="@+id/ib_noti_rewind"
+            android:layout_width="80dp"
+            android:layout_height="80dp"
+            android:src="@drawable/noun_rewind_343502"
+            android:adjustViewBounds="true"
+            android:scaleType="centerInside"
+
+            />
+
+        <ImageButton
+            android:id="@+id/ib_noti_play"
+            android:layout_width="80dp"
+            android:layout_height="80dp"
+            android:src="@drawable/noun_play_343514"
+            android:adjustViewBounds="true"
+            android:scaleType="centerInside"
+            />
+
+        <ImageButton
+            android:id="@+id/ib_noti_stop"
+            android:layout_width="80dp"
+            android:layout_height="80dp"
+            android:src="@drawable/noun_stop_343504"
+            android:adjustViewBounds="true"
+            android:scaleType="centerInside"
+            />
+
+    </LinearLayout>
+
+    <ProgressBar
+        android:id="@+id/pb_noti_position"
+        style="@style/Widget.AppCompat.ProgressBar.Horizontal"
+        android:layout_width="match_parent"
+        android:layout_height="20dp"
+        android:indeterminate="false" />
+
+</LinearLayout>

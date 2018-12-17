@@ -5,6 +5,9 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.media.MediaMetadataRetriever;
 import android.media.MediaPlayer;
 import android.net.Uri;
 import android.os.Environment;
@@ -66,6 +69,25 @@ public class MusicService extends Service {
         }
     };
     private Thread progressThread = null;
+    private Runnable runnable = new Runnable() {
+        @SuppressWarnings("LoopConditionNotUpdatedInsideLoop")
+        @Override
+        public void run() {
+            try {
+                while (status != STATUS_COMPLETE) {
+                    if (status == STATUS_RUNNING) {
+                        // update progress bar
+                        notiManager.setProgress(player.getDuration(), player.getCurrentPosition());
+                        startForeground(222, notiManager.getNotification());
+                        Log.i("MusicService", "progress thread, current postion : " + player.getCurrentPosition());
+                    }
+                    Thread.sleep(500);
+                }
+            } catch (InterruptedException e) {
+                Log.i("MusicService", "progress thread is interrupted...");
+            }
+        }
+    };
 
     public MusicService() {
     }
@@ -82,29 +104,10 @@ public class MusicService extends Service {
         setPlayer();
 
         // make notification manager
-        notiManager = new MusicNotiManager(this, status);
+        notiManager = new MusicNotiManager(this, status, filePath);
         notiManager.setProgress(player.getDuration(), player.getCurrentPosition());
 
         // set work thread
-        Runnable runnable = new Runnable() {
-            @SuppressWarnings("LoopConditionNotUpdatedInsideLoop")
-            @Override
-            public void run() {
-                while (status != STATUS_COMPLETE) {
-                    if (status == STATUS_RUNNING) {
-                        // update progress bar
-                        notiManager.setProgress(player.getDuration(), player.getCurrentPosition());
-                        startForeground(222, notiManager.getNotification());
-                        Log.i("MusicService", "progress thread, current postion : " + player.getCurrentPosition());
-                        try {
-                            Thread.sleep(500);
-                        } catch (InterruptedException e) {
-                            break;
-                        }
-                    }
-                }
-            }
-        };
         ProgressManager.setRunnable(runnable);
         progressThread = ProgressManager.getThread();
     }
@@ -112,16 +115,16 @@ public class MusicService extends Service {
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         Log.i("MusicService", "onStartCommand()");
+        myPlay();
         return START_STICKY;
     }
+
 
     @Override
     public void onDestroy() {
         Log.i("MusicService", "onDestory()");
-        if(player != null){
-            player.release();
-        }
-        status = STATUS_STOP;
+        // stop thread, player
+        myStop();
 
         // unregister broadcast receiver
         unregisterReceiver(receiver);
@@ -178,7 +181,7 @@ public class MusicService extends Service {
     }
 
     public void setPlayer() {
-        filePath = Environment.getExternalStorageDirectory().getPath() + "/Music/1-01 Way Back Home.mp3";
+        filePath = Environment.getExternalStorageDirectory().getPath() + "/Sample.mp3";
         player = MediaPlayer.create(getApplicationContext(), Uri.fromFile(new File(filePath)));
         player.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
             @Override
@@ -189,14 +192,26 @@ public class MusicService extends Service {
     }
 
     public void myPlay() {
+        // set player, start music
         if (player == null) {
             setPlayer();
         }
         player.start();
         status = STATUS_RUNNING;
+
+        // set initial progress bar & play image button
         notiManager.setStatus(status);
         notiManager.updateIbPlaySrc();
+
+        // set notification
         startForeground(222, notiManager.getNotification());
+        Log.i("MusicService", notiManager.getNotification().toString());
+
+        // make & start progress thread
+        if (progressThread == null) {
+            Log.i("MusicService", "myPlay() progress thread is null");
+            progressThread = ProgressManager.getThread();
+        }
         progressThread.start();
     }
 
@@ -223,29 +238,36 @@ public class MusicService extends Service {
     }
 
     public void myRewind() {
-        if (status == STATUS_RUNNING) {
-            player.pause();
-        }
-        position = player.getCurrentPosition();
-        if (position >= 10000) {
-            position -= 10000;
-        } else {
-            position = 0;
-        }
-        player.seekTo(position);
-        if (status == STATUS_RUNNING) {
-            player.start();
+        if(player != null){
+            if (status == STATUS_RUNNING) {
+                player.pause();
+            }
+
+            position = player.getCurrentPosition();
+            if (position >= 10000) {
+                position -= 10000;
+            } else {
+                position = 0;
+            }
+            player.seekTo(position);
+            if (status == STATUS_RUNNING) {
+                player.start();
+            }
         }
     }
 
     public void myStop() {
+        progressThread.interrupt();
+        while(!progressThread.isInterrupted()){
+
+        }
+        progressThread = null;
+        ProgressManager.freeThread();
         player.stop();
         player.release();
         player = null;
+        status = STATUS_STOP;
         stopForeground(true);
         notiManager.cancel();
-        status = STATUS_STOP;
-        progressThread.interrupt();
     }
-
 }

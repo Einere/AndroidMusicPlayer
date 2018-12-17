@@ -10,6 +10,7 @@ interface IMusicService {
      */
     int currentPosition();
     int getMaxDuration();
+    void play();
     void resume();
     void pause();
     void rewind();
